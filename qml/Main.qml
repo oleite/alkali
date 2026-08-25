@@ -30,6 +30,12 @@ ApplicationWindow {
                 SplitView.fillWidth: true
                 Area {
                     label: "Viewer"
+
+                    ImageViewer {
+                        id: viewerItem
+                        objectName: "viewer"
+                        anchors.fill: parent
+                    }
                 }
                 Area {
                     label: "Network Editor"
