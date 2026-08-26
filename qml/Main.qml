@@ -1,12 +1,13 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 import "areas"
 import "components"
 
 ApplicationWindow {
-    width: 640
-    height: 480
+    width: 1080
+    height: 720
     visible: true
     title: qsTr("Alkali")
 
@@ -24,12 +25,15 @@ ApplicationWindow {
 
             Area {
                 label: "Tools"
+                SplitView.preferredWidth: 50
             }
             SplitView {
                 orientation: Qt.Vertical
                 SplitView.fillWidth: true
                 Area {
                     label: "Viewer"
+                    clip: true
+                    SplitView.preferredHeight: 300
 
                     ImageViewer {
                         id: viewerItem
@@ -43,6 +47,18 @@ ApplicationWindow {
             }
             Area {
                 label: "Knob Editor"
+                SplitView.preferredWidth: 400
+
+                RowLayout {
+                    anchors.fill: parent
+                    Slider {
+                        id: sliderItem
+                        objectName: "slider"
+
+                        Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignTop
+                    }
+                }
             }
         }
     }

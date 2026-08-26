@@ -27,4 +27,5 @@ protected:
 private:
     mutable QMutex m_mutex;
     QImage m_image;
+    bool m_textureDirty = false;
 };

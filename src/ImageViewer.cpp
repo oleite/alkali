@@ -21,6 +21,7 @@ void ImageViewer::setImage(const QImage &image)
     {
         QMutexLocker lock(&m_mutex);
         m_image = image;
+        m_textureDirty = true;
     }
 
     Q_EMIT imageChanged();
@@ -37,13 +38,19 @@ QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
         node->setOwnsTexture(true);
     }
 
+    node->setRect(boundingRect());
+
     QImage imageCopy;
+    
     {
         QMutexLocker lock(&m_mutex);
+        if (!m_textureDirty)
+        {
+            return node;
+        }
         imageCopy = m_image;
+        m_textureDirty = false;
     }
-
-    node->setRect(boundingRect());
 
     if (imageCopy.isNull() || !window())
     {
@@ -53,6 +60,5 @@ QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     QSGTexture *newTexture = window()->createTextureFromImage(imageCopy);
 
     node->setTexture(newTexture);
-
     return node;
 }
