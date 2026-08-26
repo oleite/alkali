@@ -4,6 +4,7 @@ import QtQuick.Layouts
 
 ToolBar {
     height: 20
+
     background: Rectangle {
         color: "#222"
     }
@@ -15,29 +16,26 @@ ToolBar {
         spacing: 15
 
         Label {
-            text: "Waiting for input"
             font.pixelSize: 12
+            text: "Waiting for input"
         }
-
         Item {
             Layout.fillWidth: true
         }
-
         Label {
-            text: (activityProgress.value * 100).toString() + "%"
             font.pixelSize: 12
+            text: (activityProgress.value * 100).toString() + "%"
         }
-
         ProgressBar {
             id: activityProgress
-            value: 0.67
-            implicitWidth: 100
-            Layout.alignment: Qt.AlignVCenter
-        }
 
+            Layout.alignment: Qt.AlignVCenter
+            implicitWidth: 100
+            value: 0.67
+        }
         Label {
-            text: "A, B, C"
             font.pixelSize: 12
+            text: "A, B, C"
         }
     }
 }

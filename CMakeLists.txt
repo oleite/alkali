@@ -34,7 +34,13 @@ qt_add_qml_module(alkali
     QML_FILES
         qml/Main.qml
         qml/areas/Area.qml
+        qml/areas/FilledArea.qml
         qml/components/StatusBar.qml
+        qml/components/AlkSplitView.qml
+
+    RESOURCES
+        qml/assets/sipi_mandril.png
+        qml/assets/rgbtest.png
 )
 
 set_target_properties(alkali PROPERTIES

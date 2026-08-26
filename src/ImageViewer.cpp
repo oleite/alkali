@@ -36,6 +36,9 @@ QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     {
         node = new QSGSimpleTextureNode();
         node->setOwnsTexture(true);
+        // QImage image{100, 100, QImage::Format_RGBA8888};
+        // image.fill(Qt::magenta);
+        // node->setTexture(window()->createTextureFromImage(image));
     }
 
     node->setRect(boundingRect());

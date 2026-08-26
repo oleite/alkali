@@ -5,38 +5,45 @@
 #include <qqml.h>
 #include <Halide.h>
 
-
 class Processor : public QObject
 {
     Q_OBJECT
     QML_ELEMENT
 
+    Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(float intensity READ intensity WRITE setIntensity NOTIFY intensityChanged)
     Q_PROPERTY(QImage output READ output NOTIFY outputChanged)
 
 public:
     Processor();
 
+    QUrl source() const;
+    void setSource(QUrl source);
+
     float intensity() const;
     void setIntensity(float intensity);
 
     QImage output() const;
-    
 
 Q_SIGNALS:
+    void sourceChanged();
     void intensityChanged();
     void outputChanged();
 
 private:
-    void initHalide();
-    void repaint();
+    QUrl resolveSourceUrl(const QUrl &source) const;
+    void buildPipeline();
+    void prepareBuffers();
+    void render();
 
 private:
-    Halide::Func m_gradient;
+    QUrl m_sourceUrl;
+    QImage m_sourceImage;
 
-    Halide::Param<float> m_intensity{"intensity", .5f};
-    int m_width = 800;
-    int m_height = 600;
+    Halide::Func m_pipeline;
+
+    Halide::ImageParam m_inputParam{Halide::type_of<uint8_t>(), 3, "input_B"};
+    Halide::Param<float> m_intensityParam{"intensity", .5f};
 
     Halide::Buffer<uint8_t> m_outputBuffer;
     QImage m_outputImage;
