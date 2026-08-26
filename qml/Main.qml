@@ -11,6 +11,10 @@ ApplicationWindow {
     visible: true
     title: qsTr("Alkali")
 
+    Processor {
+        id: processor
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "#222"
@@ -37,8 +41,8 @@ ApplicationWindow {
 
                     ImageViewer {
                         id: viewerItem
-                        objectName: "viewer"
                         anchors.fill: parent
+                        image: processor.output
                     }
                 }
                 Area {
@@ -52,8 +56,8 @@ ApplicationWindow {
                 RowLayout {
                     anchors.fill: parent
                     Slider {
-                        id: sliderItem
-                        objectName: "slider"
+                        value: processor.intensity
+                        onMoved: processor.intensity = value
 
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignTop

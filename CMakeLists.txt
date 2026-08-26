@@ -28,6 +28,8 @@ qt_add_qml_module(alkali
     SOURCES
         src/ImageViewer.h
         src/ImageViewer.cpp
+        src/Processor.h
+        src/Processor.cpp
 
     QML_FILES
         qml/Main.qml
