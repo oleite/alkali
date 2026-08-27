@@ -46,7 +46,7 @@ void Processor::setSource(QUrl source)
         qWarning() << "Failed to load image: " << path;
         return;
     }
-    image = image.convertToFormat(QImage::Format_RGBA8888);
+    image = image.convertToFormat(QImage::Format_RGBA32FPx4);
 
     m_sourceUrl = resolvedSource;
     m_sourceImage = std::move(image);
@@ -85,7 +85,7 @@ void Processor::buildPipeline()
     value = Halide::select(
         c == 3, value,
         value * m_intensityParam);
-    m_pipeline(x, y, c) = Halide::cast<uint8_t>(Halide::clamp(value, 0.0f, 255.0f));
+    m_pipeline(x, y, c) = Halide::cast<float>(value);
 
     m_inputParam.dim(0).set_stride(4);
     m_inputParam.dim(2).set_stride(1);
@@ -99,17 +99,19 @@ void Processor::prepareBuffers()
     const int width = m_sourceImage.width();
     const int height = m_sourceImage.height();
 
-    m_inputParam.set(Halide::Buffer<uint8_t>::make_interleaved(
-        m_sourceImage.bits(),
+    float *inputPixels = reinterpret_cast<float *>(m_sourceImage.bits());
+    m_inputParam.set(Halide::Buffer<float>::make_interleaved(
+        inputPixels,
         width,
         height,
         4));
 
     // TODO: Revisit frame ownership before async rendering.
     // Rn Halide is writing directly to the QImage storage that is shared with the viewer.
-    m_outputImage = QImage(width, height, QImage::Format_RGBA8888);
-    m_outputBuffer = Halide::Buffer<uint8_t>::make_interleaved(
-        m_outputImage.bits(),
+    m_outputImage = QImage(width, height, QImage::Format_RGBA32FPx4);
+    float *outputPixels = reinterpret_cast<float *>(m_outputImage.bits());
+    m_outputBuffer = Halide::Buffer<float>::make_interleaved(
+        outputPixels,
         width,
         height,
         4);

@@ -36,7 +36,7 @@ QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     {
         node = new QSGSimpleTextureNode();
         node->setOwnsTexture(true);
-        // QImage image{100, 100, QImage::Format_RGBA8888};
+        // QImage image{100, 100, QImage::Format_RGBA32FPx4};
         // image.fill(Qt::magenta);
         // node->setTexture(window()->createTextureFromImage(image));
     }
@@ -44,7 +44,7 @@ QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
     node->setRect(boundingRect());
 
     QImage imageCopy;
-    
+
     {
         QMutexLocker lock(&m_mutex);
         if (!m_textureDirty)

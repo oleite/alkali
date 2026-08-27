@@ -42,9 +42,9 @@ private:
 
     Halide::Func m_pipeline;
 
-    Halide::ImageParam m_inputParam{Halide::type_of<uint8_t>(), 3, "input_B"};
+    Halide::ImageParam m_inputParam{Halide::type_of<float>(), 3, "input_B"};
     Halide::Param<float> m_intensityParam{"intensity", .5f};
 
-    Halide::Buffer<uint8_t> m_outputBuffer;
+    Halide::Buffer<float> m_outputBuffer;
     QImage m_outputImage;
 };
