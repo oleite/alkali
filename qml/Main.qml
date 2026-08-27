@@ -39,13 +39,12 @@ ApplicationWindow {
 
             anchors.bottomMargin: 0
             anchors.fill: parent
-            anchors.margins: 5
             orientation: Qt.Horizontal
 
             FilledArea {
                 id: toolsArea
 
-                SplitView.preferredWidth: 50
+                SplitView.preferredWidth: 70
                 clip: true
                 label: "Tools"
 
@@ -61,21 +60,101 @@ ApplicationWindow {
                         anchors.fill: parent
                         spacing: 5
 
-                        Button {
+                        ToolButton {
                             Layout.fillWidth: true
-                            text: "Open"
+                            text: "Open.."
 
                             onClicked: fileDialog.open()
                         }
-                        Button {
+                        ToolButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
                             icon.color: "transparent"
-                            icon.source: "assets/sipi_mandril.png"
+                            icon.source: "assets/andromeda.png"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
 
                             onClicked: processor.source = icon.source
                         }
-                        Button {
+                        ToolButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            icon.color: "transparent"
+                            icon.source: "assets/house.tiff"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
+
+                            onClicked: processor.source = icon.source
+                        }
+                        ToolButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
                             icon.color: "transparent"
                             icon.source: "assets/rgbtest.png"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
+
+                            onClicked: processor.source = icon.source
+                        }
+                        ToolButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            icon.color: "transparent"
+                            icon.source: "assets/serpa.jpeg"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
+
+                            onClicked: processor.source = icon.source
+                        }
+                        ToolButton {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            icon.color: "transparent"
+                            icon.source: "assets/sipi_mandril.png"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
+
+                            onClicked: processor.source = icon.source
+                        }
+                        ToolButton {
+                            id: woodpecker
+
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 40
+                            icon.color: "transparent"
+                            icon.source: "assets/woodpecker.jpg"
+
+                            contentItem: Image {
+                                anchors.fill: parent
+                                anchors.margins: 5
+                                fillMode: Image.PreserveAspectCrop
+                                source: parent.icon.source
+                            }
 
                             onClicked: processor.source = icon.source
                         }
@@ -92,17 +171,9 @@ ApplicationWindow {
                     anchors.fill: parent
                     orientation: Qt.Vertical
 
-                    FilledArea {
-                        SplitView.preferredHeight: 300
-                        clip: true
-                        label: "Viewer"
-
-                        ImageViewer {
-                            id: viewerItem
-
-                            anchors.fill: parent
-                            image: processor.output
-                        }
+                    ViewerArea {
+                        SplitView.preferredHeight: 350
+                        image: processor.output
                     }
                     FilledArea {
                         label: "Network Editor"
@@ -113,17 +184,45 @@ ApplicationWindow {
                 SplitView.preferredWidth: 400
                 label: "Knob Editor"
 
-                RowLayout {
+                ColumnLayout {
                     anchors.fill: parent
+                    anchors.margins: 5
 
-                    Slider {
-                        Layout.alignment: Qt.AlignTop
+                    Item {
+                        height: 30
+                    }
+                    Rectangle {
                         Layout.fillWidth: true
-                        from: 0
-                        to: 3
-                        value: processor.intensity
+                        color: "#444"
+                        height: 30
+                        radius: 5
 
-                        onMoved: processor.intensity = value
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            spacing: 10
+
+                            Label {
+                                text: "Exposure"
+                            }
+                            Slider {
+                                id: slider
+
+                                Layout.fillHeight: true
+                                Layout.fillWidth: true
+                                from: 0
+                                to: 3
+                                value: processor.intensity
+
+                                onMoved: processor.intensity = value
+                            }
+                            Label {
+                                text: slider.value.toFixed(2)
+                            }
+                        }
+                    }
+                    Item {
+                        Layout.fillHeight: true
                     }
                 }
             }

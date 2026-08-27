@@ -5,18 +5,22 @@
 #include <QMutex>
 #include <qqml.h>
 
-class ImageViewer : public QQuickItem
+class ImageRenderItem : public QQuickItem
 {
     Q_OBJECT
     QML_ELEMENT
 
     Q_PROPERTY(QImage image READ image WRITE setImage NOTIFY imageChanged)
+    Q_PROPERTY(int imageWidth READ imageWidth NOTIFY imageChanged)
+    Q_PROPERTY(int imageHeight READ imageHeight NOTIFY imageChanged)
 
 public:
-    explicit ImageViewer(QQuickItem *parent = nullptr);
+    explicit ImageRenderItem(QQuickItem *parent = nullptr);
 
     QImage image() const;
     void setImage(const QImage &image);
+    int imageWidth() const;
+    int imageHeight() const;
 
 Q_SIGNALS:
     void imageChanged();

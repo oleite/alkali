@@ -1,22 +1,22 @@
-#include "ImageViewer.h"
+#include "ImageRenderItem.h"
 
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
 #include <QMutexLocker>
 
-ImageViewer::ImageViewer(QQuickItem *parent)
+ImageRenderItem::ImageRenderItem(QQuickItem *parent)
     : QQuickItem(parent)
 {
     setFlag(ItemHasContents, true);
 }
 
-QImage ImageViewer::image() const
+QImage ImageRenderItem::image() const
 {
     QMutexLocker lock(&m_mutex);
     return m_image;
 }
 
-void ImageViewer::setImage(const QImage &image)
+void ImageRenderItem::setImage(const QImage &image)
 {
     {
         QMutexLocker lock(&m_mutex);
@@ -28,7 +28,17 @@ void ImageViewer::setImage(const QImage &image)
     update();
 }
 
-QSGNode *ImageViewer::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
+int ImageRenderItem::imageWidth() const
+{
+    return m_image.width();
+}
+
+int ImageRenderItem::imageHeight() const
+{
+    return m_image.height();
+}
+
+QSGNode *ImageRenderItem::updatePaintNode(QSGNode *oldNode, UpdatePaintNodeData *)
 {
     auto *node = static_cast<QSGSimpleTextureNode *>(oldNode);
 

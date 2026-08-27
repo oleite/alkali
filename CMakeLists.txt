@@ -26,8 +26,8 @@ qt_add_qml_module(alkali
     VERSION 1.0
 
     SOURCES
-        src/ImageViewer.h
-        src/ImageViewer.cpp
+        src/ImageRenderItem.h
+        src/ImageRenderItem.cpp
         src/Processor.h
         src/Processor.cpp
 
@@ -35,12 +35,18 @@ qt_add_qml_module(alkali
         qml/Main.qml
         qml/areas/Area.qml
         qml/areas/FilledArea.qml
+        qml/areas/ViewerArea.qml
+        qml/areas/Viewport.qml
         qml/components/StatusBar.qml
         qml/components/AlkSplitView.qml
 
     RESOURCES
-        qml/assets/sipi_mandril.png
+        qml/assets/andromeda.png
+        qml/assets/house.tiff
         qml/assets/rgbtest.png
+        qml/assets/serpa.jpeg
+        qml/assets/sipi_mandril.png
+        qml/assets/woodpecker.jpg
 )
 
 set_target_properties(alkali PROPERTIES
