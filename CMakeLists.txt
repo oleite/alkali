@@ -5,7 +5,8 @@ project(Alkali VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick)
+
+find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2)
 find_package(Halide REQUIRED)
 
 
@@ -58,6 +59,7 @@ set_target_properties(alkali PROPERTIES
 
 target_link_libraries(alkali PRIVATE 
     Qt6::Quick
+    Qt6::QuickControls2
     Halide::Halide
 )
 
