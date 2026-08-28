@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 4.1)
 
 project(Alkali VERSION 0.1 LANGUAGES CXX)
 
@@ -31,6 +31,8 @@ qt_add_qml_module(alkali
         src/ImageRenderItem.cpp
         src/Processor.h
         src/Processor.cpp
+        src/Paths.h
+        src/Paths.cpp
 
     QML_FILES
         qml/Main.qml
@@ -40,14 +42,6 @@ qt_add_qml_module(alkali
         qml/areas/Viewport.qml
         qml/components/StatusBar.qml
         qml/components/AlkSplitView.qml
-
-    RESOURCES
-        qml/assets/andromeda.png
-        qml/assets/house.tiff
-        qml/assets/rgbtest.png
-        qml/assets/serpa.jpeg
-        qml/assets/sipi_mandril.png
-        qml/assets/woodpecker.jpg
 )
 
 set_target_properties(alkali PROPERTIES
@@ -62,6 +56,47 @@ target_link_libraries(alkali PRIVATE
     Qt6::QuickControls2
     Halide::Halide
 )
+
+option(ALKALI_ENABLE_ASAN "Enable AddressSanitizer" OFF)
+
+if(ALKALI_ENABLE_ASAN)
+    if(MSVC)
+        target_compile_options(alkali PRIVATE /fsanitize=address /Zi)
+        target_link_options(alkali PRIVATE /INCREMENTAL:NO)
+    else()
+        target_compile_options(
+            alkali PRIVATE
+            -fsanitize=address
+            -fno-omit-frame-pointer
+        )
+        target_link_options(
+            alkali PRIVATE
+            -fsanitize=address
+        )
+    endif()
+endif()
+
+if(APPLE)
+    file(GLOB RESOURCE_ENTRIES
+        CONFIGURE_DEPENDS
+        "${CMAKE_CURRENT_SOURCE_DIR}/resources/*"
+    )
+
+    target_sources(alkali PRIVATE ${RESOURCE_ENTRIES})
+
+    set_source_files_properties(
+        ${RESOURCE_ENTRIES}
+        PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources"
+    )
+else()
+    add_custom_command(
+        TARGET alkali POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/resources"
+            "$<TARGET_FILE_DIR:alkali>/resources"
+    )
+endif()
 
 include(GNUInstallDirs)
 install(TARGETS alkali

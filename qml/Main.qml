@@ -22,7 +22,7 @@ ApplicationWindow {
     Processor {
         id: processor
 
-        source: "assets/rgbtest.png"
+        source: Paths.testImage("rgbtest.png")
     }
     FileDialog {
         id: fileDialog
@@ -61,7 +61,7 @@ ApplicationWindow {
                         onClicked: fileDialog.open()
                     }
                     Repeater {
-                        model: ["assets/andromeda.png", "assets/house.tiff", "assets/rgbtest.png", "assets/serpa.jpeg", "assets/sipi_mandril.png", "assets/woodpecker.jpg"]
+                        model: [Paths.testImage("andromeda.png"), Paths.testImage("house.tiff"), Paths.testImage("rgbtest.png"), Paths.testImage("serpa.jpeg"), Paths.testImage("sipi_mandril.png"), Paths.testImage("woodpecker.jpg")]
 
                         delegate: ImageSourceButton {
                             required property string modelData
