@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.8 REQUIRED COMPONENTS Quick QuickControls2)
 find_package(Halide REQUIRED)
+find_package(OpenColorIO REQUIRED)
+find_package(OpenImageIO CONFIG REQUIRED)
 
 
 qt_standard_project_setup(REQUIRES 6.8)
@@ -55,6 +57,8 @@ target_link_libraries(alkali PRIVATE
     Qt6::Quick
     Qt6::QuickControls2
     Halide::Halide
+    OpenColorIO::OpenColorIO
+    OpenImageIO::OpenImageIO
 )
 
 option(ALKALI_ENABLE_ASAN "Enable AddressSanitizer" OFF)

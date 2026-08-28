@@ -39,17 +39,16 @@ void Processor::setSource(QUrl source)
         return;
     }
 
-    QImage image;
     const QString path = QQmlFile::urlToLocalFileOrQrc(resolvedSource);
-    if (!image.load(path))
+    qDebug() << "Loading: " << path;
+    m_sourceInput = OIIO::ImageInput::open(path.toStdString());
+    if (!m_sourceInput)
     {
-        qWarning() << "Failed to load image: " << path;
+        qCritical() << "Failed to load image: " << resolvedSource;
         return;
     }
-    image = image.convertToFormat(QImage::Format_RGBA32FPx4);
 
     m_sourceUrl = resolvedSource;
-    m_sourceImage = std::move(image);
 
     prepareBuffers();
 
@@ -96,12 +95,26 @@ void Processor::buildPipeline()
 
 void Processor::prepareBuffers()
 {
-    const int width = m_sourceImage.width();
-    const int height = m_sourceImage.height();
+    if (!m_sourceInput)
+        return;
 
-    float *inputPixels = reinterpret_cast<float *>(m_sourceImage.bits());
+    const auto &spec = m_sourceInput->spec();
+    const int width = spec.width;
+    const int height = spec.height;
+    const int nchannels = spec.nchannels;
+
+    m_inputPixels.resize(width * height * nchannels);
+
+    m_sourceInput->read_image(
+        0,
+        0,
+        0,
+        nchannels,
+        OIIO::TypeDesc::FLOAT,
+        m_inputPixels.data());
+
     m_inputParam.set(Halide::Buffer<float>::make_interleaved(
-        inputPixels,
+        m_inputPixels.data(),
         width,
         height,
         4));
@@ -119,7 +132,7 @@ void Processor::prepareBuffers()
 
 void Processor::render()
 {
-    if (m_sourceImage.isNull() || m_outputImage.isNull())
+    if (!m_sourceInput || m_outputImage.isNull())
         return;
 
     try

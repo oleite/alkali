@@ -4,6 +4,7 @@
 #include <QImage>
 #include <qqml.h>
 #include <Halide.h>
+#include <OpenImageIO/imageio.h>
 
 class Processor : public QObject
 {
@@ -38,7 +39,8 @@ private:
 
 private:
     QUrl m_sourceUrl;
-    QImage m_sourceImage;
+    OIIO::ImageInput::unique_ptr m_sourceInput;
+    std::vector<float> m_inputPixels;
 
     Halide::Func m_pipeline;
 
