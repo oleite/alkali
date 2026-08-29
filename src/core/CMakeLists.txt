@@ -1,6 +1,8 @@
 add_library(alkali_core STATIC
     Frame.cpp
     Frame.h
+    ImageReader.h
+    ImageReader.cpp
 )
 
 add_library(Alkali::Core ALIAS alkali_core)
