@@ -1,0 +1,6 @@
+[submodule "tests/fixtures/images/openexr"]
+	path = tests/fixtures/images/openexr
+	url = https://github.com/AcademySoftwareFoundation/openexr-images.git
+[submodule "tests/fixtures/images/oiio"]
+	path = tests/fixtures/images/oiio
+	url = https://github.com/AcademySoftwareFoundation/OpenImageIO-images.git
