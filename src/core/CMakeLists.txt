@@ -13,4 +13,5 @@ target_include_directories(alkali_core PUBLIC
 
 target_link_libraries(alkali_core PRIVATE
     alkali_sanitizers
+    OpenImageIO::OpenImageIO
 )
