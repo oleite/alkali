@@ -2,10 +2,44 @@
 
 #include <OpenImageIO/imageio.h>
 
+struct ChannelInfo
+{
+    std::string name;
+    int subimage;
+};
+
+struct LayerInfo
+{
+    int channelCount;
+    std::string name;
+    std::vector<std::string> channels;
+};
+
 struct ImageReader::Impl
 {
     std::unique_ptr<OIIO::ImageInput> input;
     std::string error;
+    std::vector<LayerName> layers;
+
+    void defineLayers()
+    {
+        if (!input)
+            return;
+        // if (rawChannelName.contains('.'))
+        // {
+        //     std::tie(layerName, channelName) = rsplit(rawChannelName, '.', 1);
+        // }
+        // else if (isMultipart)
+        // {
+        //     layerName = subimageName;
+        //     channelName = rawChannelName;
+        // }
+        // else
+        // {
+        //     layerName = "";
+        //     channelName = rawChannelName;
+        // }
+    }
 };
 
 ImageReader::~ImageReader() = default;
@@ -16,36 +50,23 @@ ImageReader::ImageReader(const std::filesystem::path &path)
     m_impl->input = OIIO::ImageInput::open(path);
     if (!m_impl->input)
         m_impl->error = OIIO::geterror();
+
+    m_impl->defineLayers();
 }
 
-int ImageReader::width() const
+Image ImageReader::readAll()
 {
-    if (!m_impl->input)
-        return 0;
-    return m_impl->input->spec().width;
+    return Image();
 }
 
-int ImageReader::height() const
+Image ImageReader::read(const std::vector<LayerName> &layers)
 {
-    if (!m_impl->input)
-        return 0;
-
-    return m_impl->input->spec().height;
+    return Image();
 }
 
-int ImageReader::channelCount() const
+std::vector<LayerName> ImageReader::layers() const
 {
-    if (!m_impl->input)
-        return 0;
-    return m_impl->input->spec().nchannels;
-}
-
-std::vector<std::string> ImageReader::channelNames() const
-{
-    if (!m_impl->input)
-        return {};
-
-    return m_impl->input->spec().channelnames;
+    return m_impl->layers;
 }
 
 std::string ImageReader::error() const

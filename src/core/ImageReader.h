@@ -1,7 +1,11 @@
 #pragma once
 
+#include "Image.h"
+
 #include <filesystem>
 #include <memory>
+#include <string>
+#include <vector>
 
 class ImageReader
 {
@@ -9,10 +13,11 @@ public:
     ImageReader(const std::filesystem::path &path);
     ~ImageReader();
 
-    int width() const;
-    int height() const;
-    int channelCount() const;
-    std::vector<std::string> channelNames() const;
+    Image readAll();
+    Image read(const std::vector<LayerName> &layers);
+
+    std::vector<LayerName> layers() const;
+
     std::string error() const;
 
     explicit operator bool() const;
