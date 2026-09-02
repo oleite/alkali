@@ -10,5 +10,6 @@ struct Rect
     static Rect getUnion(Rect a, const Rect &b);
     static Rect getIntersection(Rect a, const Rect &b);
 
+    bool empty() const;
     bool operator==(const Rect &other) const = default;
 };

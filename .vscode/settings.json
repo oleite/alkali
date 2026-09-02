@@ -3,7 +3,7 @@
     "cmake.buildDirectory": "${workspaceFolder}/build/${buildKit}/${buildType}",
     "cmake.ctest.failurePatterns": [
         {
-            "regexp": "FAIL!\\s*:\\s*([^\\r\\n]+)\\r?\\n\\s*Actual\\s*\\([^\\r\\n]*\\)\\s*:\\s*(.*?)\\r?\\n\\s*Expected\\s*\\([^\\r\\n]*\\)\\s*:\\s*(.*?)\\r?\\n\\s*Loc:\\s*\\[(.+)\\((\\d+)\\)\\]",
+            "regexp": "FAIL!\\s*:\\s*([^\\r\\n]+)\\r?\\n\\s*Actual(?:\\s*\\([^\\r\\n]*\\))?\\s*:\\s*(.*?)\\r?\\n\\s*Expected(?:\\s*\\([^\\r\\n]*\\))?\\s*:\\s*(.*?)\\r?\\n\\s*Loc:\\s*\\[(.+)\\((\\d+)\\)\\]",
             "message": 1,
             "actual": 2,
             "expected": 3,

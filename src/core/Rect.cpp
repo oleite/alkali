@@ -4,6 +4,14 @@
 
 Rect &Rect::extend(const Rect &other)
 {
+    if (empty())
+    {
+        *this = other;
+        return *this;
+    }
+    if (other.empty())
+        return *this;
+
     const int xmin1 = x;
     const int xmax1 = x + w;
     const int ymin1 = y;
@@ -24,6 +32,12 @@ Rect &Rect::extend(const Rect &other)
 
 Rect &Rect::cropTo(const Rect &other)
 {
+    if (empty() || other.empty())
+    {
+        *this = {};
+        return *this;
+    }
+
     const int xmin1 = x;
     const int xmax1 = x + w;
     const int ymin1 = y;
@@ -39,6 +53,9 @@ Rect &Rect::cropTo(const Rect &other)
     w = std::min(xmax1, xmax2) - x;
     h = std::min(ymax1, ymax2) - y;
 
+    if (empty())
+        *this = {};
+
     return *this;
 }
 
@@ -50,4 +67,9 @@ Rect Rect::getUnion(Rect a, const Rect &b)
 Rect Rect::getIntersection(Rect a, const Rect &b)
 {
     return a.cropTo(b);
+}
+
+bool Rect::empty() const
+{
+    return w <= 0 || h <= 0;
 }
