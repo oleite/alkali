@@ -303,12 +303,23 @@ private Q_SLOTS:
 
         QVERIFY(reader);
 
-        const Image rgba = reader.read({"rgba_right"});
-        QCOMPARE(rgba.width(), 2048);
-        QCOMPARE(rgba.height(), 1556);
-        compareNames(rgba.layers(), {"rgba_right"});
-        compareNames(rgba.channels("rgba_right"), {"R", "G", "B", "A"});
-        QCOMPARE(rgba.dataBounds(), (Rect{654, 245, 877, 876}));
+        QCOMPARE(reader.layers(), (std::vector<std::string>{"rgba_right",
+                                                            "depth_left",
+                                                            "forward_left",
+                                                            "whitebarmask_left",
+                                                            "rgba_left",
+                                                            "depth_right",
+                                                            "forward_right",
+                                                            "disparityL",
+                                                            "disparityR",
+                                                            "whitebarmask_right"}));
+
+        const Image image = reader.read({"rgba_right"});
+        QCOMPARE(image.width(), 2048);
+        QCOMPARE(image.height(), 1556);
+        compareNames(image.layers(), {"rgba_right"});
+        compareNames(image.channels("rgba_right"), {"R", "G", "B", "A"});
+        QCOMPARE(image.dataBounds(), (Rect{654, 245, 877, 876}));
 
         const Image depth = reader.read({"depth_left"});
         QCOMPARE(depth.width(), 2048);

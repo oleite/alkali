@@ -1,32 +1,31 @@
-#include "Image.h"
+#include <ranges>
 
-struct Image::Impl
-{
-};
+#include "Image.h"
+#include "ImageImpl.h"
 
 Rect Image::dataBounds() const
 {
-    return Rect();
+    return m_impl->dataBounds;
 }
 
 int Image::width() const
 {
-    return 0;
+    return m_impl->width;
 }
 
 int Image::height() const
 {
-    return 0;
+    return m_impl->height;
 }
 
 std::vector<LayerName> Image::layers() const
 {
-    return std::vector<LayerName>();
+    return m_impl->layerNames();
 }
 
 std::vector<ChannelName> Image::channels(const LayerName &layer) const
 {
-    return std::vector<ChannelName>();
+    return m_impl->channelNames(layer);
 }
 
 Image::~Image() = default;

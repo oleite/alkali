@@ -17,8 +17,10 @@ public:
     Image read(const std::vector<LayerName> &layers);
 
     std::vector<LayerName> layers() const;
+    std::vector<ChannelName> channels(const LayerName &layer) const;
 
     std::string error() const;
+    std::vector<std::string> warnings() const;
 
     explicit operator bool() const;
 
