@@ -13,28 +13,82 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  HOMEBREW_NO_AUTO_UPDATE: 1
+
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.*"
           cache: true
+          setup-python: false
 
-      - name: Install Halide
-        run: python3 -m pip install halide
+      - name: Enable Homebrew
+        run: |
+          echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+          echo "/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
+
+      - name: Install OpenImageIO and OpenColorIO
+        run: |
+          brew install openimageio opencolorio
+
+          echo "OpenImageIO_DIR=$(brew --prefix openimageio)/lib/cmake/OpenImageIO" \
+            >> "$GITHUB_ENV"
+
+          echo "OpenColorIO_DIR=$(brew --prefix opencolorio)/lib/cmake/OpenColorIO" \
+            >> "$GITHUB_ENV"
+
+      - name: Install CMake and Halide
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install \
+            "cmake==4.4.3" \
+            "halide==21.0.0"
+
+      - name: Verify dependencies
+        run: |
+          cmake --version
+          python --version
+          python -m pip show halide
+          oiiotool --version
+
+          test -f "$OpenImageIO_DIR/OpenImageIOConfig.cmake"
+          test -f "$OpenColorIO_DIR/OpenColorIOConfig.cmake"
+
+          echo "OpenImageIO_DIR=$OpenImageIO_DIR"
+          echo "OpenColorIO_DIR=$OpenColorIO_DIR"
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+        run: |
+          cmake \
+            -S . \
+            -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTING=ON \
+            -DOpenImageIO_DIR="$OpenImageIO_DIR" \
+            -DOpenColorIO_DIR="$OpenColorIO_DIR"
 
       - name: Build
         run: cmake --build build --parallel
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
 
       - name: Lint QML
         run: cmake --build build --target all_qmllint --parallel
