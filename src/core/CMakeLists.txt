@@ -1,9 +1,4 @@
 add_library(alkali_core STATIC
-    Frame.cpp
-    Frame.h
-    Image.cpp
-    Image.h
-    ImageImpl.h
     ImageReader.h
     ImageReader.cpp
     Rect.cpp

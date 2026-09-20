@@ -1,21 +1,20 @@
 #include <ranges>
-#include <map>
+#include <utility>
+#include <OpenImageIO/imageio.h>
 
 #include "ImageReader.h"
-#include "ImageImpl.h"
-
-#include <OpenImageIO/imageio.h>
 
 struct ReaderChannelInfo
 {
     ChannelName name;
-    int subimageIndex;
     std::string rawChannelName;
+    int rawChannelIndex;
 };
 
 struct ReaderLayerInfo
 {
     LayerName name;
+    int subimageIndex;
     std::vector<ReaderChannelInfo> channels;
 
     ReaderChannelInfo *channelInfo(const ChannelName &name)
@@ -39,6 +38,20 @@ struct ReaderLayerInfo
             names.push_back(channel.name);
         }
         return names;
+    }
+    bool channelsContiguous() const
+    {
+        int prev = -1;
+        for (const auto &channel : channels)
+        {
+            if (prev != -1 &&
+                channel.rawChannelIndex != prev + 1)
+            {
+                return false;
+            }
+            prev = channel.rawChannelIndex;
+        }
+        return true;
     }
 };
 
@@ -98,9 +111,7 @@ struct ImageReader::Impl
     std::string error;
     std::vector<std::string> warnings;
     std::vector<ReaderLayerInfo> layers;
-    int nsubimages;
-    int width, height;
-    Rect dataBounds;
+    int width = 0, height = 0;
 
     const ReaderLayerInfo *layerInfo(const LayerName &name) const
     {
@@ -140,35 +151,58 @@ struct ImageReader::Impl
     }
 
     void addChannel(
-        const ParsedChannelName parsed,
+        const ParsedChannelName &parsed,
         const int subimageIndex,
-        const std::string &rawChannelName)
+        const std::string &rawChannelName,
+        const int rawChannelIndex)
     {
         const auto &layerName = parsed.layer;
         const auto &channelName = parsed.channel;
 
-        auto layer = layerInfo(layerName);
+        auto *layer = layerInfo(layerName);
+
         if (layer == nullptr)
         {
-            layers.emplace_back(layerName);
+            layers.emplace_back(
+                layerName,
+                subimageIndex,
+                std::vector<ReaderChannelInfo>{});
+
             layer = &layers.back();
         }
-
-        if (auto channel = layer->channelInfo(channelName); channel != nullptr)
+        else if (subimageIndex != layer->subimageIndex)
         {
             warnings.push_back(
-                "Channel name conflict: '" +
-                layerName + "." + channelName +
-                "' is defined by subimages " +
-                std::to_string(channel->subimageIndex) +
-                " and " +
+                "Layer subimage conflict: '" +
+                layerName +
+                "' is already defined by subimage " +
+                std::to_string(layer->subimageIndex) +
+                ", cannot add channel '" +
+                channelName +
+                "' from subimage " +
                 std::to_string(subimageIndex) +
                 ". Keeping the first occurrence.");
 
             return;
         }
 
-        layer->channels.emplace_back(channelName, subimageIndex, rawChannelName);
+        if (auto *channel = layer->channelInfo(channelName); channel != nullptr)
+        {
+            warnings.push_back(
+                "Channel name conflict: '" +
+                layerName + "." + channelName +
+                "' in subimage " +
+                std::to_string(layer->subimageIndex) +
+                " is defined by both '" +
+                channel->rawChannelName +
+                "' and '" +
+                rawChannelName +
+                "'. Keeping the first occurrence.");
+
+            return;
+        }
+
+        layer->channels.emplace_back(channelName, rawChannelName, rawChannelIndex);
     }
 
     void defineLayers()
@@ -177,7 +211,7 @@ struct ImageReader::Impl
             return;
 
         const auto &rootSpec = input->spec();
-        nsubimages = rootSpec.get_int_attribute("oiio:subimages", 1);
+        const int nsubimages = rootSpec.get_int_attribute("oiio:subimages", 1);
         const bool multipart = nsubimages > 1;
 
         // first subimage defines the global display window
@@ -187,42 +221,34 @@ struct ImageReader::Impl
         for (int subimageIndex = 0; subimageIndex < nsubimages; ++subimageIndex)
         {
             const auto &spec = input->spec(subimageIndex, 0);
-            dataBounds.extend({spec.x - spec.full_x,
-                               spec.y - spec.full_y,
-                               spec.width,
-                               spec.height});
 
             std::string subimageName = spec.get_string_attribute("oiio:subimagename", "");
 
-            for (const std::string &rawChannelName : spec.channelnames)
+            // for (const std::string &rawChannelName : spec.channelnames)
+            // {
+            for (int i = 0; i < spec.nchannels; ++i)
             {
+                const auto &rawChannelName = spec.channelnames[i];
+
                 addChannel(
                     ParsedChannelName(rawChannelName, subimageName, multipart),
                     subimageIndex,
-                    rawChannelName);
+                    rawChannelName, i);
             }
         }
     }
 
-    Rect dataBoundsForLayers(const std::vector<LayerName> &layerNames) const
+    Rect dataBoundsForLayer(const LayerName &layerName) const
     {
-        Rect bounds;
-        for (const auto &layerName : layerNames)
-        {
-            const auto *layer = layerInfo(layerName);
-            if (layer == nullptr)
-                continue;
+        const auto *layer = layerInfo(layerName);
+        if (layer == nullptr)
+            return {};
 
-            for (const auto &channel : layer->channels)
-            {
-                const auto spec = input->spec_dimensions(channel.subimageIndex, 0);
-                bounds.extend({spec.x - spec.full_x,
-                               spec.y - spec.full_y,
-                               spec.width,
-                               spec.height});
-            }
-        }
-        return bounds;
+        const auto spec = input->spec_dimensions(layer->subimageIndex, 0);
+        return {spec.x - spec.full_x,
+                spec.y - spec.full_y,
+                spec.width,
+                spec.height};
     }
 };
 
@@ -238,30 +264,45 @@ ImageReader::ImageReader(const std::filesystem::path &path)
     m_impl->defineLayers();
 }
 
-Image ImageReader::readAll()
+PixelBlock ImageReader::read(const LayerName &layer)
 {
-    return read(m_impl->layerNames());
-}
-
-Image ImageReader::read(const std::vector<LayerName> &layers)
-{
-    auto image = Image();
-
-    image.m_impl->width = m_impl->width;
-    image.m_impl->height = m_impl->height;
-
-    for (const auto &layerName : layers)
+    const auto *info = m_impl->layerInfo(layer);
+    if (info == nullptr)
     {
-        auto channelNames = m_impl->channelNames(layerName);
-        if (channelNames.empty())
-            continue;
-
-        image.m_impl->layers.emplace_back(layerName, channelNames);
+        m_impl->warnings.push_back(
+            "Failed to read layer '" + layer +
+            "': does not exist");
+        return {};
+    }
+    if (!info->channelsContiguous())
+    {
+        m_impl->warnings.push_back(
+            "Failed to read layer '" + layer +
+            "': non-contiguous channel indexes.");
+        return {};
     }
 
-    image.m_impl->dataBounds = m_impl->dataBoundsForLayers(layers);
+    PixelBlock block;
 
-    return image;
+    block.dataBounds = m_impl->dataBoundsForLayer(layer);
+    block.channels = m_impl->channelNames(layer);
+
+    int nchannels = block.channels.size();
+    block.pixels.resize(block.dataBounds.w * block.dataBounds.h * nchannels);
+
+    const bool ok = m_impl->input->read_image(info->subimageIndex, 0,
+                                              info->channels.front().rawChannelIndex,
+                                              info->channels.back().rawChannelIndex + 1,
+                                              OIIO::TypeDesc::FLOAT,
+                                              block.pixels.data());
+
+    if (!ok)
+    {
+        m_impl->error = m_impl->input->geterror();
+        return {};
+    }
+
+    return block;
 }
 
 std::vector<LayerName> ImageReader::layers() const
@@ -272,6 +313,16 @@ std::vector<LayerName> ImageReader::layers() const
 std::vector<ChannelName> ImageReader::channels(const LayerName &layer) const
 {
     return m_impl->channelNames(layer);
+}
+
+int ImageReader::width() const
+{
+    return m_impl->width;
+}
+
+int ImageReader::height() const
+{
+    return m_impl->height;
 }
 
 std::string ImageReader::error() const
