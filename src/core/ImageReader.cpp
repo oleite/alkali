@@ -254,17 +254,7 @@ struct ImageReader::Impl
 
 ImageReader::~ImageReader() = default;
 
-ImageReader::ImageReader(const std::filesystem::path &path)
-    : m_impl(std::make_unique<Impl>())
-{
-    m_impl->input = OIIO::ImageInput::open(path);
-    if (!m_impl->input)
-        m_impl->error = OIIO::geterror();
-
-    m_impl->defineLayers();
-}
-
-PixelBlock ImageReader::read(const LayerName &layer)
+PixelBlock ImageReader::initialize(const LayerName &layer) const
 {
     const auto *info = m_impl->layerInfo(layer);
     if (info == nullptr)
@@ -285,10 +275,25 @@ PixelBlock ImageReader::read(const LayerName &layer)
     PixelBlock block;
 
     block.dataBounds = m_impl->dataBoundsForLayer(layer);
+    block.layer = layer;
     block.channels = m_impl->channelNames(layer);
 
     int nchannels = block.channels.size();
     block.pixels.resize(block.dataBounds.w * block.dataBounds.h * nchannels);
+
+    return block;
+}
+
+void ImageReader::realize(PixelBlock &block) const
+{
+    const auto *info = m_impl->layerInfo(block.layer);
+    if (info == nullptr)
+    {
+        m_impl->warnings.push_back(
+            "Failed to read layer '" + block.layer +
+            "': does not exist");
+        return;
+    }
 
     const bool ok = m_impl->input->read_image(info->subimageIndex, 0,
                                               info->channels.front().rawChannelIndex,
@@ -297,12 +302,25 @@ PixelBlock ImageReader::read(const LayerName &layer)
                                               block.pixels.data());
 
     if (!ok)
-    {
         m_impl->error = m_impl->input->geterror();
-        return {};
-    }
+}
 
+PixelBlock ImageReader::read(const LayerName &layer) const
+{
+    auto block = initialize(layer);
+    if (!block.pixels.empty())
+        realize(block);
     return block;
+}
+
+ImageReader::ImageReader(const std::filesystem::path &path)
+    : m_impl(std::make_unique<Impl>())
+{
+    m_impl->input = OIIO::ImageInput::open(path);
+    if (!m_impl->input)
+        m_impl->error = OIIO::geterror();
+
+    m_impl->defineLayers();
 }
 
 std::vector<LayerName> ImageReader::layers() const

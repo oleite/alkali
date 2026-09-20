@@ -13,6 +13,7 @@ using ChannelName = std::string;
 struct PixelBlock
 {
     Rect dataBounds;
+    LayerName layer;
     std::vector<ChannelName> channels;
 
     // interleaved (x, y, c)
@@ -26,7 +27,10 @@ public:
     ImageReader(const std::filesystem::path &path);
     ~ImageReader();
 
-    PixelBlock read(const LayerName &layer);
+    PixelBlock initialize(const LayerName &layer) const;
+    void realize(PixelBlock &block) const;
+
+    PixelBlock read(const LayerName &layer) const;
 
     std::vector<LayerName> layers() const;
     std::vector<ChannelName> channels(const LayerName &layer) const;

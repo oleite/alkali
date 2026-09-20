@@ -39,21 +39,13 @@ void Processor::setSource(QUrl source)
         return;
     }
 
-    const QString path = QQmlFile::urlToLocalFileOrQrc(resolvedSource);
-    qDebug() << "Loading: " << path;
-    m_sourceInput = OIIO::ImageInput::open(path.toStdString());
-    if (!m_sourceInput)
-    {
-        qCritical() << "Failed to load image: " << resolvedSource;
-        return;
-    }
-
     m_sourceUrl = resolvedSource;
 
-    prepareBuffers();
-
-    Q_EMIT sourceChanged();
-    render();
+    if (prepareBuffers())
+    {
+        Q_EMIT sourceChanged();
+        render();
+    }
 }
 
 float Processor::intensity() const
@@ -73,76 +65,106 @@ void Processor::setIntensity(float intensity)
 
 QImage Processor::output() const
 {
-    return m_outputImage;
+    return m_displayQImage;
 }
 
 void Processor::buildPipeline()
 {
-
     Halide::Var x, y, c;
-    Halide::Expr value = Halide::cast<float>(m_inputParam(x, y, c));
-    value = Halide::select(
-        c == 3, value,
-        value * m_intensityParam);
-    m_pipeline(x, y, c) = Halide::cast<float>(value);
 
-    m_inputParam.dim(0).set_stride(4);
+    m_inputParam.dim(0).set_stride(Halide::Expr{});
     m_inputParam.dim(2).set_stride(1);
 
-    m_pipeline.output_buffer().dim(0).set_stride(4);
-    m_pipeline.output_buffer().dim(2).set_stride(1);
+    Halide::Func bounded = Halide::BoundaryConditions::constant_exterior(m_inputParam, 0.0f);
+    Halide::Expr val = Halide::select(
+        c >= m_inputParam.channels(),
+        Halide::select(c == 3, 1.0f, 0.0f),
+        bounded(x, y, c));
+
+    m_process(x, y, c) = Halide::select(c == 3, val, val * m_intensityParam);
+
+    m_display(x, y, c) = m_process(x, y, c);
+
+    m_display.output_buffer().dim(0).set_stride(4);
+    m_display.output_buffer().dim(2).set_stride(1);
 }
 
-void Processor::prepareBuffers()
+bool Processor::prepareBuffers()
 {
-    if (!m_sourceInput)
-        return;
+    if (!readInput())
+        return false;
 
-    const auto &spec = m_sourceInput->spec();
-    const int width = spec.width;
-    const int height = spec.height;
-    const int nchannels = spec.nchannels;
+    const Rect &bounds = m_inputPixels.dataBounds;
+    const int nchannels = m_inputPixels.channels.size();
 
-    m_inputPixels.resize(width * height * nchannels);
+    auto buffer = Halide::Buffer<float>::make_interleaved(
+        m_inputPixels.pixels.data(),
+        bounds.w,
+        bounds.h,
+        nchannels);
 
-    m_sourceInput->read_image(
-        0,
-        0,
-        0,
-        nchannels,
-        OIIO::TypeDesc::FLOAT,
-        m_inputPixels.data());
+    buffer.set_min(bounds.x, bounds.y);
 
-    m_inputParam.set(Halide::Buffer<float>::make_interleaved(
-        m_inputPixels.data(),
-        width,
-        height,
-        4));
+    m_inputParam.set(buffer);
 
     // TODO: Revisit frame ownership before async rendering.
     // Rn Halide is writing directly to the QImage storage that is shared with the viewer.
-    m_outputImage = QImage(width, height, QImage::Format_RGBA32FPx4);
-    float *outputPixels = reinterpret_cast<float *>(m_outputImage.bits());
-    m_outputBuffer = Halide::Buffer<float>::make_interleaved(
-        outputPixels,
-        width,
-        height,
+    m_displayQImage = QImage(m_displayWidth, m_displayHeight, QImage::Format_RGBA32FPx4);
+    m_displayHalideBuffer = Halide::Buffer<float>::make_interleaved(
+        reinterpret_cast<float *>(m_displayQImage.bits()),
+        m_displayWidth,
+        m_displayHeight,
         4);
+
+    return true;
+}
+
+bool Processor::readInput()
+{
+    const auto path = QQmlFile::urlToLocalFileOrQrc(m_sourceUrl).toStdString();
+    qDebug() << "Loading: " << path;
+
+    auto reader = ImageReader(path);
+    if (!reader)
+    {
+        qWarning() << "Failed to load '" << path << "' Warnings: "
+                   << reader.warnings() << " Errors: "
+                   << reader.error();
+
+        return false;
+    }
+
+    const std::string layer = "rgba";
+    m_inputPixels = reader.read(layer);
+    if (m_inputPixels.pixels.empty())
+    {
+        qWarning() << "Failed to read layer '" << layer << "' Warnings: "
+                   << reader.warnings() << " Errors: "
+                   << reader.error();
+
+        return false;
+    }
+
+    m_displayWidth = reader.width();
+    m_displayHeight = reader.height();
+
+    return true;
 }
 
 void Processor::render()
 {
-    if (!m_sourceInput || m_outputImage.isNull())
+    if (m_displayQImage.isNull())
         return;
 
     try
     {
-        m_pipeline.realize(m_outputBuffer);
+        m_display.realize(m_displayHalideBuffer);
         Q_EMIT outputChanged();
     }
     catch (const Halide::Error &e)
     {
-        qCritical() << "Halide realize error:" << e.what();
+        qCritical() << "Failed to Render - Halide realize error: "
+                    << e.what();
         return;
     }
 }

@@ -8,6 +8,9 @@ oiiotool --info -v -a ./tests/fixtures/images/openexr/TestImages/stripes.exr
 Need to decide how to treat subimages from tiffs, since apparently they dont show up in oiio:subimages, needing a repeated seek
 
 
+jj bookmark move main --to @ && jj git push --bookmark main
+
+
 ---
 # next stuff to fix, as per codex's review
 

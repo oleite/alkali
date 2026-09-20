@@ -6,6 +6,8 @@
 #include <Halide.h>
 #include <OpenImageIO/imageio.h>
 
+#include "core/ImageReader.h"
+
 class Processor : public QObject
 {
     Q_OBJECT
@@ -34,19 +36,24 @@ Q_SIGNALS:
 private:
     QUrl resolveSourceUrl(const QUrl &source) const;
     void buildPipeline();
-    void prepareBuffers();
+    bool prepareBuffers();
+    bool readInput();
     void render();
 
 private:
     QUrl m_sourceUrl;
-    OIIO::ImageInput::unique_ptr m_sourceInput;
-    std::vector<float> m_inputPixels;
 
-    Halide::Func m_pipeline;
+    Halide::Func m_process;
+    Halide::Func m_display;
+
+    PixelBlock m_inputPixels;
 
     Halide::ImageParam m_inputParam{Halide::type_of<float>(), 3, "input_B"};
     Halide::Param<float> m_intensityParam{"intensity", 1.0f};
 
-    Halide::Buffer<float> m_outputBuffer;
-    QImage m_outputImage;
+    Halide::Buffer<float> m_displayHalideBuffer;
+    QImage m_displayQImage;
+
+    int m_displayWidth = 0;
+    int m_displayHeight = 0;
 };

@@ -298,10 +298,12 @@ private Q_SLOTS:
         const PixelBlock block = reader.read("rgba");
         const auto nanCount = std::count_if(
             block.pixels.cbegin(), block.pixels.cend(),
-            [](float value) { return std::isnan(value); });
+            [](float value)
+            { return std::isnan(value); });
         const auto infCount = std::count_if(
             block.pixels.cbegin(), block.pixels.cend(),
-            [](float value) { return std::isinf(value); });
+            [](float value)
+            { return std::isinf(value); });
 
         comparePixelBlock(block, {0, 0, 800, 800},
                           {"R", "G", "B"}, 800 * 800 * 3);
